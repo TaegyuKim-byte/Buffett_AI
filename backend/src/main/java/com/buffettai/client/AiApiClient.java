@@ -2,6 +2,7 @@ package com.buffettai.client;
 
 import com.buffettai.dto.AiPredictionRequest;
 import com.buffettai.dto.AiPredictionResponse;
+import com.buffettai.exception.AiApiException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
@@ -44,7 +45,7 @@ public class AiApiClient {
             return response;
         } catch (RestClientException e) {
             log.error("AI 서버 호출 실패: {}", e.getMessage());
-            throw new RuntimeException("AI 서버 호출 실패: " + e.getMessage(), e);
+            throw new AiApiException("AI 서버 호출 실패: " + e.getMessage(), e);
         }
     }
 }

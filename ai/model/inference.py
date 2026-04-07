@@ -10,13 +10,13 @@
 """
 
 import logging
+import pickle
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
 
 import numpy as np
 import torch
-from sklearn.preprocessing import StandardScaler
 
 from ai.data.collector import prepare_dataset
 from ai.model.lstm_model import LSTMStockPredictor
@@ -52,6 +52,27 @@ def load_model(model_version: str = "v1.0-LSTM-PyTorch") -> Optional[LSTMStockPr
     return model
 
 
+def load_scaler(model_version: str = "v1.0-LSTM-PyTorch"):
+    """
+    학습 시 저장된 StandardScaler를 로드합니다.
+    추론 시 반드시 학습과 동일한 scaler를 사용해야 올바른 정규화가 보장됩니다.
+
+    Args:
+        model_version: 모델 버전명
+
+    Returns:
+        로드된 StandardScaler, 실패 시 None
+    """
+    scaler_path = CHECKPOINT_DIR / f"{model_version}.scaler.pkl"
+    if not scaler_path.exists():
+        logger.error("Scaler 파일 없음: %s", scaler_path)
+        return None
+    with open(scaler_path, "rb") as f:
+        scaler = pickle.load(f)
+    logger.info("Scaler 로드 완료: %s", model_version)
+    return scaler
+
+
 def predict(
     ticker: str,
     model_version: str = "v1.0-LSTM-PyTorch",
@@ -81,14 +102,19 @@ def predict(
         logger.error("모델 로드 실패: %s", model_version)
         return None
 
+    # 학습 시 저장된 scaler 로드 (추론에도 동일한 정규화 파라미터 사용)
+    scaler = load_scaler(model_version)
+    if scaler is None:
+        logger.error("Scaler 로드 실패: %s", model_version)
+        return None
+
     df = prepare_dataset(ticker, period="6mo")
     if df is None or df.empty or len(df) < WINDOW_SIZE:
         logger.error("추론용 데이터 부족: ticker=%s", ticker)
         return None
 
-    scaler = StandardScaler()
     features = df[FEATURE_COLS].values
-    features_scaled = scaler.fit_transform(features)
+    features_scaled = scaler.transform(features)
 
     # 가장 최근 WINDOW_SIZE일 데이터를 입력으로 사용
     x_input = features_scaled[-WINDOW_SIZE:]

@@ -15,6 +15,7 @@
 
 import logging
 import os
+import pickle
 from pathlib import Path
 from typing import List, Tuple
 
@@ -84,7 +85,7 @@ def train(
         학습 완료된 LSTMStockPredictor 모델
     """
     all_X, all_y = [], []
-    scaler = StandardScaler()
+    ticker_data = {}
 
     for ticker in tickers:
         logger.info("데이터 준비: %s", ticker)
@@ -92,16 +93,25 @@ def train(
         if df is None or df.empty:
             logger.warning("데이터 없음, 건너뜀: %s", ticker)
             continue
+        ticker_data[ticker] = df
 
-        features = df[FEATURE_COLS].values
+    if not ticker_data:
+        raise RuntimeError("학습 데이터가 없습니다.")
+
+    # 모든 종목 데이터를 합쳐 하나의 scaler를 fit (일관된 정규화)
+    combined_features = np.concatenate(
+        [df[FEATURE_COLS].values for df in ticker_data.values()], axis=0
+    )
+    scaler = StandardScaler()
+    scaler.fit(combined_features)
+
+    for ticker, df in ticker_data.items():
+        raw_features = df[FEATURE_COLS].values
         targets = df[TARGET_COL].values
-        features_scaled = scaler.fit_transform(features)
+        features_scaled = scaler.transform(raw_features)
         X, y = create_sequences(features_scaled, targets, WINDOW_SIZE)
         all_X.append(X)
         all_y.append(y)
-
-    if not all_X:
-        raise RuntimeError("학습 데이터가 없습니다.")
 
     X_all = np.concatenate(all_X, axis=0)
     y_all = np.concatenate(all_y, axis=0)
@@ -141,6 +151,8 @@ def train(
     # 모델 저장
     CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
     checkpoint_path = CHECKPOINT_DIR / f"{model_version}.pt"
+    scaler_path = CHECKPOINT_DIR / f"{model_version}.scaler.pkl"
+
     torch.save(
         {
             "model_state_dict": model.state_dict(),
@@ -151,7 +163,11 @@ def train(
         },
         checkpoint_path,
     )
+    # scaler를 함께 저장하여 추론 시 동일한 정규화 사용
+    with open(scaler_path, "wb") as f:
+        pickle.dump(scaler, f)
     logger.info("모델 저장 완료: %s", checkpoint_path)
+    logger.info("Scaler 저장 완료: %s", scaler_path)
     return model
 
 

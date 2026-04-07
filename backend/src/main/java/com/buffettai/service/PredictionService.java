@@ -5,6 +5,7 @@ import com.buffettai.dto.AiPredictionRequest;
 import com.buffettai.dto.AiPredictionResponse;
 import com.buffettai.dto.PredictionResponseDto;
 import com.buffettai.entity.Prediction;
+import com.buffettai.exception.AiPredictionException;
 import com.buffettai.repository.PredictionRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +45,9 @@ public class PredictionService {
         AiPredictionResponse response = aiApiClient.requestPrediction(request);
 
         if (response == null || response.getPredictions() == null || response.getPredictions().isEmpty()) {
-            throw new RuntimeException("AI 서버로부터 유효한 예측 결과를 받지 못했습니다.");
+            throw new AiPredictionException(
+                "AI 서버로부터 유효한 예측 결과를 받지 못했습니다. ticker=" + ticker + ", targetDate=" + targetDate
+            );
         }
 
         AiPredictionResponse.PredictionItem item = response.getPredictions().get(0);

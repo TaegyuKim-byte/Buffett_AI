@@ -51,7 +51,7 @@ MODEL_VERSION = os.getenv("MODEL_VERSION", "v1.0-LSTM-PyTorch")
 
 class PredictRequest(BaseModel):
     ticker: str
-    target_date: date
+    target_date: Optional[date] = None
 
 
 class PredictionItem(BaseModel):
@@ -112,10 +112,16 @@ def predict_endpoint(request: PredictRequest):
         raise HTTPException(status_code=500, detail=f"예측 실패: {request.ticker}")
 
     now = datetime.utcnow()
+    pred_date = now.date()
+
+    # target_date: 요청에서 지정한 날짜를 사용합니다.
+    # 지정하지 않은 경우 예측일 기준 5 영업일 후로 계산합니다.
+    target_date = request.target_date if request.target_date else _add_business_days(pred_date, 5)
+
     prediction_item = PredictionItem(
         ticker=request.ticker,
-        pred_date=now.date(),
-        target_date=request.target_date,
+        pred_date=pred_date,
+        target_date=target_date,
         current_price=result["current_price"],
         pred_return=result["pred_return"],
         pred_price=result["pred_price"],
@@ -170,6 +176,18 @@ def _normalize_ticker(ticker: str) -> str:
     if ticker.isdigit() and len(ticker) == 6:
         return ticker + ".KS"
     return ticker
+
+
+def _add_business_days(start: date, days: int) -> date:
+    """주어진 날짜에서 영업일(월~금) 기준으로 N일 후 날짜를 계산합니다."""
+    from datetime import timedelta
+    current = start
+    added = 0
+    while added < days:
+        current += timedelta(days=1)
+        if current.weekday() < 5:  # 월(0)~금(4)
+            added += 1
+    return current
 
 
 if __name__ == "__main__":

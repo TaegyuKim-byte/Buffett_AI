@@ -1,9 +1,9 @@
 package com.buffettai.repository;
 
 import com.buffettai.entity.StockData;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
@@ -20,8 +20,11 @@ public interface StockDataRepository extends JpaRepository<StockData, Long> {
 
     Optional<StockData> findByTickerAndTradeDate(String ticker, LocalDate tradeDate);
 
-    @Query("SELECT s FROM StockData s WHERE s.ticker = :ticker ORDER BY s.tradeDate DESC LIMIT :days")
-    List<StockData> findRecentByTicker(@Param("ticker") String ticker, @Param("days") int days);
+    List<StockData> findByTickerOrderByTradeDateDesc(String ticker, Pageable pageable);
 
     boolean existsByTickerAndTradeDate(String ticker, LocalDate tradeDate);
+
+    default List<StockData> findRecentByTicker(String ticker, int days) {
+        return findByTickerOrderByTradeDateDesc(ticker, PageRequest.of(0, days));
+    }
 }
