@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>예측 결과 - Buffett AI</title>
+    <link rel="stylesheet" href="../css/style.css">
+</head>
+<body>
+    <header class="header">
+        <div class="header-inner">
+            <div class="logo">
+                <span class="logo-icon">📈</span>
+                <span class="logo-text">Buffett <strong>AI</strong></span>
+            </div>
+            <nav class="nav">
+                <a href="../index.html" class="nav-link">대시보드</a>
+                <a href="predictions.html" class="nav-link active">예측 결과</a>
+                <a href="backtest.html" class="nav-link">백테스트</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="main">
+        <section class="search-section card">
+            <h2>종목별 예측 이력</h2>
+            <div class="search-row">
+                <input
+                    type="text"
+                    id="tickerInput"
+                    class="input"
+                    placeholder="종목 코드 입력 (예: 005930, AAPL)"
+                    value="005930"
+                />
+                <button class="btn btn-primary" onclick="loadHistory()">조회</button>
+            </div>
+            <div id="errorMsg" class="error-msg hidden"></div>
+        </section>
+
+        <section>
+            <h2>예측 이력</h2>
+            <div class="card">
+                <table class="table">
+                    <thead>
+                        <tr>
+                            <th>예측일</th>
+                            <th>대상일 (+5일)</th>
+                            <th>현재 주가</th>
+                            <th>예측 수익률</th>
+                            <th>예측 주가</th>
+                            <th>신뢰도</th>
+                            <th>모델</th>
+                            <th>분석 근거</th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyBody">
+                        <tr><td colspan="8" class="text-center loading-text">종목 코드를 입력하고 조회하세요.</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>Buffett AI &copy; 2026 | 본 서비스는 투자 참고용이며 투자 손실에 대한 책임은 투자자 본인에게 있습니다.</p>
+    </footer>
+
+    <script src="../js/api.js"></script>
+    <script>
+        async function loadHistory() {
+            const ticker = document.getElementById('tickerInput').value.trim();
+            if (!ticker) return;
+
+            document.getElementById('errorMsg').classList.add('hidden');
+            const tbody = document.getElementById('historyBody');
+            tbody.innerHTML = '<tr><td colspan="8" class="text-center loading-text">로딩 중...</td></tr>';
+
+            try {
+                const data = await fetchPredictionsByTicker(ticker);
+                if (!data || data.length === 0) {
+                    tbody.innerHTML = '<tr><td colspan="8" class="text-center">예측 이력이 없습니다.</td></tr>';
+                    return;
+                }
+                tbody.innerHTML = data.map(p => {
+                    const ret = p.predReturn ?? p.pred_return;
+                    const isPos = ret >= 0;
+                    return `
+                        <tr>
+                            <td>${formatDate(p.predDate ?? p.pred_date)}</td>
+                            <td>${formatDate(p.targetDate ?? p.target_date)}</td>
+                            <td>${formatPrice(p.currentPrice ?? p.current_price)}</td>
+                            <td class="${isPos ? 'positive' : 'negative'}">${formatReturn(ret)}</td>
+                            <td>${formatPrice(p.predPrice ?? p.pred_price)}</td>
+                            <td>${formatConfidence(p.confidence)}</td>
+                            <td>${p.modelVersion ?? p.model_version ?? '-'}</td>
+                            <td>${p.analysisNote ?? p.analysis_note ?? '-'}</td>
+                        </tr>
+                    `;
+                }).join('');
+            } catch (err) {
+                document.getElementById('errorMsg').textContent = '조회 실패: ' + err.message;
+                document.getElementById('errorMsg').classList.remove('hidden');
+                tbody.innerHTML = '<tr><td colspan="8" class="text-center">데이터 로드 실패</td></tr>';
+            }
+        }
+    </script>
+</body>
+</html>
