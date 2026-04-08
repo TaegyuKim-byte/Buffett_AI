@@ -52,9 +52,9 @@ $$r_{t,5} = \frac{P_{t+5} - P_t}{P_t}$$
 |------|------|
 | Frontend | HTML5 + JavaScript (Vanilla) + Chart.js |
 | Backend | Spring Boot 3.2 (Java 17) |
-| AI 모델 | PyTorch + LSTM |
-| 데이터 수집 | yfinance + pandas |
-| AI API 서버 | FastAPI + uvicorn |
+| AI 모델 | TensorFlow |
+| 데이터 수집 | ? |
+| AI API 서버 | ? |
 | 데이터베이스 | MySQL 8.0 |
 
 ---
@@ -134,17 +134,17 @@ Content-Type: application/json
   "status": "success",
   "metadata": {
     "generated_at": "2026-04-05T18:30:00Z",
-    "model_version": "v1.0-LSTM-PyTorch",
+    "model_version": "v1.0-TensorFlow",
     "total_count": 1
   },
   "predictions": [
     {
-      "ticker": "005930",
+      "ticker": "AAPL",
       "pred_date": "2026-04-05",
       "target_date": "2026-04-10",
-      "current_price": 75000,
-      "pred_return": 0.0450,
-      "pred_price": 78375,
+      "current_price": 185.92,
+      "pred_return": 0.0354,
+      "pred_price": 192.50,
       "confidence": 0.85,
       "analysis_note": "단기 골든크로스 및 MACD 매수 신호 기반"
     }
@@ -158,12 +158,7 @@ Content-Type: application/json
 
 | 특성 | 설명 |
 |------|------|
-| Open, High, Low, Close, Volume | 과거 30일 OHLCV |
-| MA5, MA20, MA60 | 이동평균선 |
-| RSI14 | 상대강도지수 (14일) |
-| MACD, MACD_signal | MACD 지표 |
-| BB_upper, BB_lower | 볼린저 밴드 (20일, 2σ) |
-| Volume_MA5 | 거래량 5일 이동평균 |
+
 
 **출력 (Target):** $r_{t,5} = \frac{P_{t+5} - P_t}{P_t}$
 
@@ -186,10 +181,9 @@ Content-Type: application/json
 
 | 시간 | 작업 |
 |------|------|
-| 15:30 | 한국 주식 장 마감 |
-| 16:00 | yfinance로 당일 주가 데이터 수집 (Python) |
-| 17:00 | AI 모델 추론 실행 → DB 저장 (Spring Scheduler) |
-| 익일 09:00 | 예측 결과 확인 가능 |
+| 09:00 | yfinance로 당일 주가 데이터 수집 (Python) |
+| 10:00 | AI 모델 추론 실행 → DB 저장 (Spring Scheduler) |
+| 11:00 | 예측 결과 확인 가능 |
 
 ---
 
@@ -249,10 +243,6 @@ pytest tests/ -v
 
 | 지표 | 설명 |
 |------|------|
-| 총 수익률 | 전체 기간 누적 수익률 |
-| MDD | 최대 낙폭 (Maximum DrawDown) |
-| 샤프 비율 | 위험 대비 수익률 |
-| 방향성 정확도 | 상승/하락 예측 정확도 |
 
 ---
 
@@ -260,3 +250,4 @@ pytest tests/ -v
 
 1. **Threshold 기반 매수**: `pred_return > threshold` 인 종목 매수
 2. **상위 N개 매수**: 예측 수익률 상위 N개 종목 매수
+3. 구체적 사항 논의 필요
