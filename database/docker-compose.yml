@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  mysql-db:
+    image: mysql:8.0.33  # 설치할 MySQL 버전 (최신 안정화 버전)
+    container_name: buffett_mysql  # 프로세스(컨테이너) 이름
+    ports:
+      - "3306:3306"  # 내 컴퓨터의 3306 포트로 들어오면, 컨테이너의 3306으로 연결해줌
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword123!  # 루트 최고관리자 비밀번호
+      MYSQL_DATABASE: buffett_db  # 시작할 때 자동으로 만들어줄 DB 이름
+      MYSQL_USER: buffett_user  # Spring Boot가 접속할 전용 계정
+      MYSQL_PASSWORD: userpassword123!  # 전용 계정 비밀번호
+    volumes:
+      - ./mysql_data:/var/lib/mysql  # ⭐️ 데이터 영구 저장소 (컨테이너를 껐다 켜도 데이터 유지)
+      - ./init:/docker-entrypoint-initdb.d  # ⭐️ 처음 켤 때 자동으로 실행할 SQL 파일들 모음
+    command:
+      - --character-set-server=utf8mb4  # 한글 및 이모지 깨짐 방지
+      - --collation-server=utf8mb4_unicode_ci

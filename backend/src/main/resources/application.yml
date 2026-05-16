@@ -1,27 +1,19 @@
 spring:
+  application:
+    name: backend
+
+  # 1. DB 연결 설정 (도커 MySQL과 통신)
   datasource:
-    url: jdbc:mysql://localhost:3306/buffett_ai?useSSL=false&allowPublicKeyRetrieval=true&characterEncoding=UTF-8&serverTimezone=Asia/Seoul
-    username: ${DB_USERNAME:root}
-    password: ${DB_PASSWORD:password}
     driver-class-name: com.mysql.cj.jdbc.Driver
+    url: jdbc:mysql://localhost:3306/buffett_db?useSSL=false&serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true
+    username: buffett_user
+    password: userpassword123!
+
+  # 2. JPA 설정 (자바와 DB 자동 연결)
   jpa:
     hibernate:
-      ddl-auto: validate
-    show-sql: false
+      ddl-auto: validate # 도커에서 만든 테이블 구조가 맞는지 검사만 함
+    show-sql: true # 백엔드가 DB로 날리는 SQL을 터미널에 보여줌
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.MySQLDialect
-        format_sql: true
-
-server:
-  port: 8080
-
-ai:
-  api:
-    base-url: ${AI_API_URL:http://localhost:8000}
-    timeout: 30000
-
-logging:
-  level:
-    com.buffettai: INFO
-    org.springframework.web: INFO
+        format_sql: true # SQL을 예쁘게 줄바꿈해서 보여줌

@@ -21,6 +21,9 @@ backend/out/
 *.class
 *.jar
 
+# Database / Docker Volumes (MySQL 소켓/데이터 백업 방지)
+database/mysql_data/
+
 # IDE
 .idea/
 .vscode/

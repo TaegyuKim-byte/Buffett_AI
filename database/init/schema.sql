@@ -2,16 +2,14 @@
 -- MySQL 8.0+
 -- 문자셋: utf8mb4, 정렬: utf8mb4_unicode_ci
 
-CREATE DATABASE IF NOT EXISTS buffett_ai
+CREATE DATABASE IF NOT EXISTS buffett_db
     CHARACTER SET utf8mb4
     COLLATE utf8mb4_unicode_ci;
 
-USE buffett_ai;
+USE buffett_db;
 
--- ============================================================
 -- 1. 종목 마스터 테이블
 --    지원하는 종목의 기본 정보를 관리합니다.
--- ============================================================
 CREATE TABLE IF NOT EXISTS stock_master (
     id           BIGINT       NOT NULL AUTO_INCREMENT,
     ticker       VARCHAR(20)  NOT NULL COMMENT '종목 코드 (예: 005930)',
@@ -27,10 +25,8 @@ CREATE TABLE IF NOT EXISTS stock_master (
     KEY idx_stock_master_ticker (ticker)
 ) ENGINE=InnoDB COMMENT='종목 마스터';
 
--- ============================================================
 -- 2. 주가 데이터 테이블 (과거 OHLCV 차트)
 --    Python yfinance로 수집한 일별 주가 데이터를 저장합니다.
--- ============================================================
 CREATE TABLE IF NOT EXISTS stock_data (
     id             BIGINT         NOT NULL AUTO_INCREMENT,
     ticker         VARCHAR(20)    NOT NULL COMMENT '종목 코드',
@@ -48,11 +44,8 @@ CREATE TABLE IF NOT EXISTS stock_data (
     KEY idx_stock_data_trade_date (trade_date)
 ) ENGINE=InnoDB COMMENT='주가 OHLCV 데이터';
 
--- ============================================================
 -- 3. 예측 결과 테이블
 --    AI LSTM 모델이 생성한 5일 후 수익률 예측 결과를 저장합니다.
---    예측 수식: r_{t,5} = (P_{t+5} - P_t) / P_t
--- ============================================================
 CREATE TABLE IF NOT EXISTS prediction (
     id             BIGINT          NOT NULL AUTO_INCREMENT,
     ticker         VARCHAR(20)     NOT NULL COMMENT '종목 코드',
@@ -71,11 +64,9 @@ CREATE TABLE IF NOT EXISTS prediction (
     KEY idx_prediction_target_date (target_date)
 ) ENGINE=InnoDB COMMENT='AI 예측 결과';
 
--- ============================================================
 -- 4. 백테스트 결과 테이블 (AI 모델 성적표)
 --    특정 기간 동안 AI 예측 기반 매매 시의 성과를 저장합니다.
 --    Python에서 실행되며 결과가 이 테이블에 저장됩니다.
--- ============================================================
 CREATE TABLE IF NOT EXISTS backtest_result (
     id                   BIGINT         NOT NULL AUTO_INCREMENT,
     start_date           DATE           NOT NULL COMMENT '백테스트 시작일',
@@ -94,18 +85,31 @@ CREATE TABLE IF NOT EXISTS backtest_result (
     KEY idx_backtest_model_version (model_version)
 ) ENGINE=InnoDB COMMENT='백테스트 결과 (AI 모델 성적표)';
 
--- ============================================================
--- 초기 데이터: 종목 마스터 (한국 주요 종목 + 미국 주요 종목)
--- ============================================================
+-- 초기 데이터: 종목 마스터 (미국 주요 종목)
 INSERT INTO stock_master (ticker, company_name, market, sector, industry) VALUES
-    ('005930', '삼성전자',   'KOSPI',  '기술',   '반도체'),
-    ('000660', 'SK하이닉스', 'KOSPI',  '기술',   '반도체'),
-    ('035420', 'NAVER',      'KOSPI',  '기술',   '인터넷'),
-    ('035720', '카카오',     'KOSPI',  '기술',   '인터넷'),
-    ('051910', 'LG화학',     'KOSPI',  '소재',   '화학'),
-    ('AAPL',   'Apple',      'NASDAQ', '기술',   '소비자 전자'),
-    ('MSFT',   'Microsoft',  'NASDAQ', '기술',   '소프트웨어'),
-    ('GOOGL',  'Alphabet',   'NASDAQ', '기술',   '인터넷'),
-    ('NVDA',   'NVIDIA',     'NASDAQ', '기술',   '반도체'),
-    ('TSLA',   'Tesla',      'NASDAQ', '자동차', '전기차')
+    ('AAPL',  'Apple',      'NASDAQ', '기술',   '소비자 전자'),
+    ('MSFT',  'Microsoft',  'NASDAQ', '기술',   '소프트웨어'),
+    ('GOOGL', 'Alphabet',   'NASDAQ', '기술',   '인터넷'),
+    ('AMZN',  'Amazon',     'NASDAQ', '소비재', '전자상거래'),
+    ('NVDA',  'NVIDIA',     'NASDAQ', '기술',   '반도체'),
+    ('META',  'Meta',       'NASDAQ', '기술',   '소셜 미디어'),
+    ('TSLA',  'Tesla',      'NASDAQ', '자동차', '전기차')
 ON DUPLICATE KEY UPDATE company_name = VALUES(company_name);
+
+-- 회원가입용 DB 테이블
+CREATE TABLE IF NOT EXISTS users (
+    id BIGINT AUTO_INCREMENT PRIMARY KEY,
+    email VARCHAR(255) NOT NULL UNIQUE COMMENT '구글 계정 이메일',
+    nickname VARCHAR(50) NOT NULL COMMENT '유저 닉네임 (초기엔 구글 이름)',
+    profile_image_url VARCHAR(500) COMMENT '구글 프로필 사진 URL',
+    
+    -- 소셜 로그인 핵심 컬럼 2가지
+    provider VARCHAR(20) NOT NULL COMMENT '가입 경로 (예: google, kakao)',
+    provider_id VARCHAR(100) NOT NULL COMMENT '가입 경로 주체(google, kakao ..)가 발급한 고유 회원 번호(sub)',
+    
+    role VARCHAR(20) DEFAULT 'ROLE_USER' COMMENT '권한 (일반유저, 관리자)',
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    
+    -- 보안: 같은 제공자의 같은 아이디로 중복 가입 방지
+    UNIQUE KEY uk_user_provider (provider, provider_id)
+)
