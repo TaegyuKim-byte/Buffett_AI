@@ -49,18 +49,18 @@ CREATE TABLE IF NOT EXISTS stock_data (
 CREATE TABLE IF NOT EXISTS prediction (
     id             BIGINT          NOT NULL AUTO_INCREMENT,
     ticker         VARCHAR(20)     NOT NULL COMMENT '종목 코드',
-    pred_date      DATE            NOT NULL COMMENT '예측 생성일 (AI 분석 수행일)',
+    prediction_date      DATE            NOT NULL COMMENT '예측 생성일 (AI 분석 수행일)',
     target_date    DATE            NOT NULL COMMENT '예측 대상일 (pred_date + 5 영업일)',
     current_price  DECIMAL(18, 2)  NOT NULL COMMENT '현재 주가 P_t',
-    pred_return    DECIMAL(10, 6)  NOT NULL COMMENT 'AI 예측 수익률 r_{t,5}',
-    pred_price     DECIMAL(18, 2)           COMMENT 'AI 예측 가격 P_{t+5}',
-    confidence     DECIMAL(5, 4)            COMMENT '모델 예측 신뢰도 (0~1)',
+    expected_return    DECIMAL(10, 6)  NOT NULL COMMENT 'AI 예측 수익률 r_{t,5}',
+    predicted_price     DECIMAL(18, 2)           COMMENT 'AI 예측 가격 P_{t+5}',
+    confidence_score     DECIMAL(5, 4)            COMMENT '모델 예측 신뢰도 (0~1)',
     analysis_note  VARCHAR(500)             COMMENT '예측 근거 분석 메모',
     model_version  VARCHAR(50)              COMMENT '사용된 모델 버전',
     generated_at   DATETIME                 COMMENT '예측 생성 타임스탬프',
     created_at     DATETIME                 DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (id),
-    KEY idx_prediction_ticker_pred_date (ticker, pred_date),
+    KEY idx_prediction_ticker_pred_date (ticker, prediction_date),
     KEY idx_prediction_target_date (target_date)
 ) ENGINE=InnoDB COMMENT='AI 예측 결과';
 
@@ -96,7 +96,7 @@ INSERT INTO stock_master (ticker, company_name, market, sector, industry) VALUES
     ('TSLA',  'Tesla',      'NASDAQ', '자동차', '전기차')
 ON DUPLICATE KEY UPDATE company_name = VALUES(company_name);
 
--- 회원가입용 DB 테이블
+-- 회원가입용 DB 테이블 -> 초반엔 안 쓸 듯
 CREATE TABLE IF NOT EXISTS users (
     id BIGINT AUTO_INCREMENT PRIMARY KEY,
     email VARCHAR(255) NOT NULL UNIQUE COMMENT '구글 계정 이메일',
