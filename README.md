@@ -65,22 +65,21 @@ $$r_{t,5} = \frac{P_{t+5} - P_t}{P_t}$$
 Buffett_AI/
 ├── backend/                        # Spring Boot 백엔드
 │   ├── build.gradle
-│   └── src/main/java/com/buffettai/
-│       ├── BuffettAiApplication.java
-│       ├── controller/             # REST API 컨트롤러
-│       │   ├── PredictionController.java
-│       │   ├── StockDataController.java
-│       │   └── BacktestController.java
-│       ├── service/                # 비즈니스 로직
-│       │   ├── PredictionService.java
-│       │   ├── StockDataService.java
-│       │   ├── BacktestService.java
-│       │   └── PredictionScheduler.java
-│       ├── repository/             # JPA 리포지토리
-│       ├── entity/                 # DB 엔티티
-│       ├── dto/                    # 요청/응답 DTO
-│       ├── client/                 # AI API HTTP 클라이언트
-│       └── config/                 # 설정 (CORS, RestTemplate)
+│   └── src/main/java/com/buffett/backend/
+│       ├── BackendApplication.java
+│       ├── domain/                 # 도메인 중심 구조
+│       │   ├── auth/               # 인증 도메인
+│       │   ├── prediction/         # 예측 도메인
+│       │   │   ├── controller/     # PredictionController.java
+│       │   │   ├── dto/           # AiPredictionRequest.java, FrontPredictionResponse.java
+│       │   │   ├── entity/        # DailyPrediction.java
+│       │   │   ├── repository/    # PredictionRepository.java
+│       │   │   └── service/       # PredictionService.java
+│       │   ├── stock/             # 주식 데이터 도메인
+│       │   └── user/              # 사용자 도메인
+│       └── global/                # 전역 설정
+│           ├── config/            # SecurityConfig.java
+│           └── exception/         # 예외 처리
 │
 ├── ai/                             # Python AI 모듈
 │   ├── requirements.txt
