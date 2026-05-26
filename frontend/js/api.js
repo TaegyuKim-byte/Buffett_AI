@@ -67,3 +67,19 @@ function formatDate(dateStr) {
     if (!dateStr) return '-';
     return new Date(dateStr).toLocaleDateString('ko-KR');
 }
+
+/**
+ * M7 종목 코드 -> 회사명 매핑
+ */
+function getCompanyName(ticker) {
+    const companyMap = {
+        'AAPL': 'Apple Inc.',
+        'MSFT': 'Microsoft Corp.',
+        'GOOGL': 'Alphabet Inc.',
+        'AMZN': 'Amazon.com Inc.',
+        'NVDA': 'NVIDIA Corp.',
+        'TSLA': 'Tesla Inc.',
+        'META': 'Meta Platforms Inc.'
+    };
+    return companyMap[ticker] || ticker;
+}

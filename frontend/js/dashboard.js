@@ -143,23 +143,23 @@ function renderPriceChart(ticker, stockData) {
 async function loadTopPicks() {
     const tbody = document.getElementById('topPicksBody');
     try {
-        const picks = await fetchTopPredictions();
+        const picks = await fetchM7Predictions();
         if (!picks || picks.length === 0) {
             tbody.innerHTML = '<tr><td colspan="7" class="text-center">예측 데이터가 없습니다.</td></tr>';
             return;
         }
         tbody.innerHTML = picks.map((p, i) => {
-            const ret = p.predReturn ?? p.pred_return;
+            const ret = p.expected_return;
             const isPos = ret >= 0;
             return `
                 <tr>
-                    <td>${i + 1}</td>
                     <td><strong>${p.ticker}</strong></td>
-                    <td>${formatPrice(p.currentPrice ?? p.current_price)}</td>
+                    <td>${getCompanyName(p.ticker)}</td>
+                    <td>${formatPrice(p.current_price)}</td>
                     <td class="${isPos ? 'positive' : 'negative'}">${formatReturn(ret)}</td>
-                    <td>${formatPrice(p.predPrice ?? p.pred_price)}</td>
-                    <td>${formatConfidence(p.confidence)}</td>
-                    <td>${p.analysisNote ?? p.analysis_note ?? '-'}</td>
+                    <td>${formatPrice(p.predicted_price)}</td>
+                    <td>-</td>
+                    <td>-</td>
                 </tr>
             `;
         }).join('');
